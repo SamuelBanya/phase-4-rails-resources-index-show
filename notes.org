@@ -1,0 +1,144 @@
+* Notes
+I ran the following commands to set this lab up:
+#+begin_src bash
+bundle install
+#+end_src
+
+I then created a corresponding 'Bird' model with the following 'rails g model' command:
+#+begin_src bash
+samuelbanya@Samuels-MBP ~/hub/Development/code/phase-4/phase-4-rails-resources-index-show $ rails g model Bird name species --no-test-framework
+      invoke  active_record
+      create    db/migrate/20221021203504_create_birds.rb
+      create    app/models/bird.rb
+#+end_src
+
+I then ran the related migration with the 'rails db:migrate' command:
+#+begin_src bash
+samuelbanya@Samuels-MBP ~/hub/Development/code/phase-4/phase-4-rails-resources-index-show $ rails db:migrate
+== 20221021203504 CreateBirds: migrating ======================================
+-- create_table(:birds)
+   -> 0.0024s
+== 20221021203504 CreateBirds: migrated (0.0025s) =============================
+#+end_src
+
+I then placed the following within the seeds file in the 'db/seeds.rb' file:
+#+begin_src ruby
+# This file should contain all the record creation needed to seed the database with its default values.
+# The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
+#
+# Examples:
+#
+#   movies = Movie.create([{ name: 'Star Wars' }, { name: 'Lord of the Rings' }])
+#   Character.create(name: 'Luke', movie: movies.first)
+Bird.create!(name: "Black-Capped Chickadee", species: "Poecile Atricapillus")
+Bird.create!(name: "Grackle", species: "Quiscalus Quiscula")
+Bird.create!(name: "Common Starling", species: "Sturnus Vulgaris")
+Bird.create!(name: "Mourning Dove", species: "Zenaida Macroura")
+#+end_src
+
+I then used the 'rails db:seed' command accordingly.
+
+Notes On 'index' and 'Show' Actions:
+- GET /birds      => show a list of all birds
+- GET /birds/:id  => show one specific bird
+
+I then modified the 'config/routes.rb' routes file with the following revisions:
+#+begin_src ruby
+Rails.application.routes.draw do
+  # For details on the DSL available within this file, see https://guides.rubyonrails.org/routing.html
+  get "/birds", to: "birds#index"
+  get "/birds/:id", to: "birds#show"
+end
+#+end_src
+
+I then checked the changes I made with the 'rails routes' command:
+#+begin_src bash
+samuelbanya@Samuels-MBP ~/hub/Development/code/phase-4/phase-4-rails-resources-index-show $ rails routes
+Prefix Verb URI Pattern          Controller#Action
+ birds GET  /birds(.:format)     birds#index
+       GET  /birds/:id(.:format) birds#show
+#+end_src
+
+I then revised the 'config/routes.rb' routes file to just include the 'resources' tool from Rails to make this much easier and simpler:
+#+begin_src ruby
+Rails.application.routes.draw do
+  # For details on the DSL available within this file, see https://guides.rubyonrails.org/routing.html
+  # NOTE: I commented out this section to instead use 'resource' later on:
+  # get "/birds", to: "birds#index"
+  # get "/birds/:id", to: "birds#show"
+  resources :birds
+end
+#+end_src
+
+I then ran the 'rails routes' command again:
+#+begin_src bash
+samuelbanya@Samuels-MBP ~/hub/Development/code/phase-4/phase-4-rails-resources-index-show $ rails routes
+Prefix Verb   URI Pattern      Controller#Action
+ birds GET    /birds(.:format) birds#show
+       PATCH  /birds(.:format) birds#update
+       PUT    /birds(.:format) birds#update
+       DELETE /birds(.:format) birds#destroy
+       POST   /birds(.:format) birds#create
+#+end_src
+
+I then revised the 'config/routes.rb' to include the 'only:' symbol to limit the amount of routes that are created since we don't need ALL of the default routes created:
+#+begin_src ruby
+Rails.application.routes.draw do
+  # For details on the DSL available within this file, see https://guides.rubyonrails.org/routing.html
+  # NOTE: I commented out this section to instead use 'resource' later on:
+  # get "/birds", to: "birds#index"
+  # get "/birds/:id", to: "birds#show"
+  resources :birds, only: [:index, :show]
+end
+#+end_src
+
+I then ran the 'rails routes' command again, and received the following routes:
+#+begin_src bash
+samuelbanya@Samuels-MBP ~/hub/Development/code/phase-4/phase-4-rails-resources-index-show $ rails routes
+Prefix Verb URI Pattern      Controller#Action
+ birds GET  /birds(.:format) birds#show
+#+end_src
+
+I then created a 'Birds' controller with the 'rails g controller' command:
+#+begin_src bash
+samuelbanya@Samuels-MBP ~/hub/Development/code/phase-4/phase-4-rails-resources-index-show $ rails g controller Birds --no-test-framework
+      create  app/controllers/birds_controller.rb
+#+end_src
+
+I then revised the 'app/controllers/birds_controller.rb' controller file with the following changes to add the appropriate 'index' action for the 'GET /birds' route, and the 'show' action for the 'GET /birds/:id' route:
+#+begin_src ruby
+class BirdsController < ApplicationController
+    # GET /birds
+    def index
+        birds = Bird.all()
+        render json: birds
+    end
+
+    # GET /birds/:id
+    def show
+        bird = Bird.find_by(id: params[:id])
+        if bird
+            render json: bird
+        else
+            render json: { error: "Bird not found" }, status: :not_found
+        end
+    end
+end
+#+end_src
+
+I then checked my work with the 'rails s' server command, visited the 'http://127.0.0.1:3000/birds/1' URL in a web browser, and received the following JSON response:
+#+begin_src json
+// 20221021160659
+// http://127.0.0.1:3000/birds/1
+
+{
+  "id": 1,
+  "name": "Black-Capped Chickadee",
+  "species": "Poecile Atricapillus",
+  "created_at": "2022-10-21T20:38:27.895Z",
+  "updated_at": "2022-10-21T20:38:27.895Z"
+}
+#+end_src
+
+Summary:
+- In this lab, there were two 'read' CRUD actions that were setup, aka 'index' and 'show', which we used a 'resources' tool along with 'only:' to filter out the routes we wanted
